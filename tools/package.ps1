@@ -1,4 +1,4 @@
-# Build a release zip containing the extension, installer, README, and license.
+# Build a release zip with the extension, installer, docs, tools, and project docs.
 [CmdletBinding()]
 param(
     [string]$Version

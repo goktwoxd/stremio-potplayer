@@ -29,7 +29,11 @@ extension itself.
 
 `extension/labels.js` is generated from the `CTX_COPY_STREAM_LINK` key in
 [Stremio/stremio-translations](https://github.com/Stremio/stremio-translations).
-Do not edit it by hand. To regenerate:
+Do not edit it by hand. It keeps current labels plus historical labels (see
+`LEGACY_LABELS` in the generator), because Stremio Web can run against an older
+translation snapshot.
+
+To regenerate:
 
 ```powershell
 git clone https://github.com/Stremio/stremio-translations.git ..\stremio-translations
@@ -37,6 +41,13 @@ python tools/update-labels.py --source ..\stremio-translations
 ```
 
 Without `--source`, the script fetches the locale files through the GitHub API.
+To verify the committed file is current without changing it:
+
+```powershell
+python tools/update-labels.py --check
+```
+
+The weekly `labels` workflow runs that check.
 
 ## Testing checklist
 
@@ -44,12 +55,14 @@ Without `--source`, the script fetches the locale files through the GitHub API.
       at least one other language.
 - [ ] Chrome shows the **Open PotPlayer?** prompt the first time.
 - [ ] PotPlayer opens a new window and plays the stream.
+- [ ] Shift-click and Alt-click copy the link **without** launching PotPlayer.
 - [ ] Cancelling Chrome's prompt and clicking again still works.
 - [ ] The in-player menu (`#/player`) does **not** launch PotPlayer.
 - [ ] The extension shows its toast and logs `[PotPlayer launcher]` lines.
 - [ ] No errors on the extension card at `chrome://extensions`.
 - [ ] `node --check extension/labels.js` and
       `node --check extension/content.js` pass.
+- [ ] `node tests/labels.test.js` and `node tests/content.test.js` pass.
 - [ ] `powershell -ExecutionPolicy Bypass -File install/install.ps1 -DryRun`
       finds PotPlayer.
 

@@ -21,6 +21,13 @@
   const labels = new Set(sourceLabels.map(normalize).filter(Boolean));
   if (labels.size === 0) labels.add(FALLBACK_LABEL);
 
+  // The list has been copied into the Set; don't leave it on Stremio's window.
+  try {
+    delete globalThis.__STREMIO_POTPLAYER_COPY_LABELS__;
+  } catch (error) {
+    // Non-configurable in some exotic worlds; harmless either way.
+  }
+
   let armedAt = 0;
   let armTimer = 0;
 
@@ -41,7 +48,13 @@
     const ariaLabel = normalize(node.getAttribute("aria-label"));
     if (ariaLabel && labels.has(ariaLabel)) return true;
 
-    return labels.has(normalize(node.textContent));
+    // Only leaf nodes are considered for text matching. This avoids reading
+    // the text of every container up to <html> on each click; Stremio already
+    // puts a title on the copy button.
+    if (node.childElementCount > 0) return false;
+
+    const text = normalize(node.textContent);
+    return text.length > 0 && text.length <= 120 && labels.has(text);
   }
 
   function arm() {
@@ -170,6 +183,10 @@
     "click",
     (event) => {
       if (inPlayer()) return;
+
+      // Shift/Alt-click is a copy-only escape hatch: let Stremio copy, do not
+      // launch PotPlayer.
+      if (event.shiftKey || event.altKey) return;
 
       const path =
         typeof event.composedPath === "function" ? event.composedPath() : [];

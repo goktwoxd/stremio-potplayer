@@ -14,9 +14,11 @@ No helper executable, no native messaging, no admin rights.
 
 ## Features
 
-- One click from Stremio's stream menu — no copy/paste dance.
-- Matches Stremio's localized **Copy stream link** label in 50+ locales,
-  generated from [Stremio/stremio-translations](https://github.com/Stremio/stremio-translations).
+- One click from a stream row — no copy/paste dance.
+- Matches current and historical localized **Copy stream link** labels in 50+
+  locales, generated from
+  [Stremio/stremio-translations](https://github.com/Stremio/stremio-translations).
+- **Shift-click or Alt-click copies without launching PotPlayer.**
 - Chrome's familiar external-protocol prompt; tick **Always allow** once and it
   won't ask again.
 - PotPlayer reads the link from the clipboard itself (`/clipboard`), so the URL
@@ -48,21 +50,37 @@ No helper executable, no native messaging, no admin rights.
 
 There is no clipboard polling and no stale read: the extension only observes the
 exact text Stremio is already writing, and only after that write succeeds. The
-URL never leaves your machine, and the extension does not download or proxy
-anything.
+extension makes no network requests and does not download or proxy anything.
 
 The extension ignores Stremio's in-player menu (`#/player`), so copying a link
 while watching does not launch a second player.
+
+Stremio writes the URL to the Windows clipboard. If Windows Clipboard History or
+cross-device sync is enabled, Windows may retain or sync it independently of the
+extension — see [Security](#security).
 
 ## Install
 
 **Requirements:** Windows 10/11, Chrome/Chromium 111+ (for MAIN-world content
 scripts), and 64-bit PotPlayer.
 
-### 1. Register the protocol
+### 1. Download and extract
+
+Download the latest `stremio-potplayer-*.zip` from this repository's
+[Releases](../../releases) and extract it to a permanent folder, for example
+`C:\Tools\stremio-potplayer`.
+
+Keep that folder: **Load unpacked** runs the extension from it, so it must stay
+on disk.
+
+### 2. Register the protocol
 
 Double-click [`install\install.cmd`](install/install.cmd). It finds PotPlayer
 and writes a per-user `stremio-potplayer:` handler.
+
+Windows may warn that the `.cmd` came from the internet because it is unsigned.
+Choose **More info → Run anyway** only if you downloaded the zip from this
+repository's Releases.
 
 If PotPlayer lives in a custom folder, pass the executable explicitly:
 
@@ -76,13 +94,13 @@ To preview the command without changing the registry:
 powershell -ExecutionPolicy Bypass -File install\install.ps1 -DryRun
 ```
 
-### 2. Load the extension
+### 3. Load the extension
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode** (top right).
 3. Click **Load unpacked** and select the [`extension`](extension) folder.
 
-### 3. Restart Chrome
+### 4. Restart Chrome
 
 Open `chrome://restart` (or quit Chrome completely and reopen). Chrome reads
 external-protocol registrations at launch.
@@ -90,25 +108,50 @@ external-protocol registrations at launch.
 ## Use
 
 1. Open <https://web.stremio.com> and choose a title.
-2. Open the stream menu (`···` or right-click) and click **Copy stream link**.
+2. **Right-click a stream row** (or Ctrl+click / long-press) and click
+   **Copy stream link**.
 3. Chrome shows **"Open PotPlayer?"** — tick **Always allow …** and click **Open**.
 4. PotPlayer opens a new window and plays the stream.
 
-After the first **Always allow**, the prompt is skipped. The in-player menu is
-intentionally ignored.
+After the first **Always allow**, the prompt is skipped. The in-player `···`
+menu is intentionally ignored.
+
+To copy a link without launching PotPlayer, hold **Shift** or **Alt** while
+clicking **Copy stream link**.
+
+## Security
+
+The protocol handler runs `PotPlayerMini64.exe /clipboard /new`, so it opens
+whatever is currently on the Windows clipboard. It cannot tell whether the
+invocation came from Stremio or from another program.
+
+- **Only tick Always allow for `web.stremio.com`.** Chrome scopes that permission
+  to the site where you ticked it; deny the prompt on every other site.
+- Any local program or document can invoke `stremio-potplayer:go` directly,
+  without Chrome's prompt.
+- Do not copy untrusted paths and then invoke the handler. A UNC path such as
+  `\\host\share\x.mkv` can make Windows authenticate to a remote SMB server and
+  expose your NTLM hash.
+- Stream URLs often contain debrid/addon API tokens. Clear the clipboard after
+  copying one if that matters.
+- If Windows Clipboard History or cross-device sync is enabled, Windows may
+  retain or sync the copied URL. Disable it or clear the entry if that matters.
+- A validating launcher that checks for an `http(s)` URL would close these gaps,
+  but it would add the helper executable this project intentionally avoids.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| Nothing happens when clicking Copy stream link | Is the extension loaded at `chrome://extensions`? Any errors on its card? Did you restart Chrome after installing the protocol? Check the console for `[PotPlayer launcher]` messages. |
+| Nothing happens when clicking Copy stream link | Is the extension loaded at `chrome://extensions`? Any errors on its card? Did you restart Chrome after installing the protocol? Check the console for `[PotPlayer launcher]` messages. Remember that the stream-row menu is opened with right-click / Ctrl+click / long-press, not a `···` button. |
+| It copies the link but PotPlayer does not open | You may have held Shift or Alt, or clicked the in-player `···` menu. Both are copy-only by design. |
 | Chrome never shows the "Open PotPlayer?" prompt | Run `install\install.cmd` again and confirm it ends with **Registered**. Verify the key with `reg query HKCU\Software\Classes\stremio-potplayer\shell\open\command`. |
 | The prompt appears every time | Tick **Always allow** in the prompt. The choice is per Chrome profile; incognito won't remember it. |
 | The extension says "Couldn't copy the stream link" | Stremio's own `writeText` call was rejected. Check the browser's clipboard permissions, then click **Copy stream link** again. The extension does not fall back to an old clipboard value. |
 | PotPlayer opens its Open URL dialog instead of playing | This build relies on PotPlayer's `/clipboard` switch. Open an issue with your PotPlayer version if it doesn't auto-play. |
 | Every stream reuses the same PotPlayer window | `/new` may not combine with `/clipboard` on your build. In PotPlayer, open `F5` → **General** → **Multiple instances** and allow multiple instances. |
 | "PotPlayer was not found" in the installer | Install 64-bit PotPlayer, or pass `-PotPlayerPath "C:\path\to\PotPlayerMini64.exe"` to `install.cmd`. |
-| The extension works in English but not another language | Run `python tools/update-labels.py --source <stremio-translations clone>` and reload the extension. The committed `labels.js` is generated from Stremio's translations. |
+| The extension works in English but not another language | Run `python tools/update-labels.py --source <stremio-translations clone>` and reload the extension. `labels.js` keeps current and historical labels, and the weekly `labels` workflow runs `--check` for upstream changes. |
 
 The extension logs to the page console with the `[PotPlayer launcher]` prefix
 (`F12` → Console). `console.info` is visible at the default log level.
@@ -127,6 +170,11 @@ contents. It only inspects the text Stremio passes to its own
 There are no network requests, analytics, or remote scripts. The protocol
 handler and the extension both run locally. See [`PRIVACY.md`](PRIVACY.md) for
 the full policy.
+
+Stremio writes the stream URL to the Windows clipboard, and that URL may contain
+API tokens. If Windows Clipboard History or cross-device sync is enabled,
+Windows may retain or sync it independently of the extension. See
+[Security](#security).
 
 ## Uninstall
 
@@ -163,15 +211,18 @@ It doesn't. It never reads the clipboard. It observes Stremio's own
 ### How are the translations kept up to date?
 
 [`extension/labels.js`](extension/labels.js) is generated from the
-`CTX_COPY_STREAM_LINK` key in Stremio's translation files:
+`CTX_COPY_STREAM_LINK` key in Stremio's translation files. It keeps both current
+labels and **historical labels**, because Stremio Web can run against an older
+translation snapshot:
 
 ```powershell
 git clone https://github.com/Stremio/stremio-translations.git ..\stremio-translations
 python tools/update-labels.py --source ..\stremio-translations
 ```
 
-The generated file is committed, so contributors only need to rerun this when
-Stremio adds or changes a locale.
+The generated file is committed. A weekly `labels` workflow runs
+`python tools/update-labels.py --check` and fails when Stremio adds or rewords a
+label; rerun the command above and commit the result.
 
 ## Contributing
 

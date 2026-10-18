@@ -52,10 +52,8 @@ function Find-PotPlayer {
     $registryKeys = @(
         "HKCU:\Software\DAUM\PotPlayer64",
         "HKLM:\SOFTWARE\DAUM\PotPlayer64",
-        "HKLM:\SOFTWARE\WOW6432Node\DAUM\PotPlayer64",
         "HKCU:\Software\DAUM\PotPlayerMini64",
-        "HKLM:\SOFTWARE\DAUM\PotPlayerMini64",
-        "HKLM:\SOFTWARE\WOW6432Node\DAUM\PotPlayerMini64"
+        "HKLM:\SOFTWARE\DAUM\PotPlayerMini64"
     )
 
     foreach ($key in $registryKeys) {
@@ -69,9 +67,6 @@ function Find-PotPlayer {
 
     if ($env:ProgramFiles) {
         $candidates.Add((Join-Path $env:ProgramFiles "DAUM\PotPlayer\PotPlayerMini64.exe"))
-    }
-    if (${env:ProgramFiles(x86)}) {
-        $candidates.Add((Join-Path ${env:ProgramFiles(x86)} "DAUM\PotPlayer\PotPlayerMini64.exe"))
     }
 
     foreach ($candidate in $candidates) {
@@ -131,6 +126,7 @@ New-Item -Path "$protocolKey\shell\open\command" -Force | Out-Null
 Set-ItemProperty -Path "$protocolKey\shell\open\command" -Name "(default)" -Value $command
 
 Write-Host "Registered '$scheme' for the current user (no admin needed)." -ForegroundColor Green
+Write-Host "Security: this handler opens whatever is on the clipboard. Only use it with trusted links." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Next:" -ForegroundColor Cyan
 Write-Host "  1. Open chrome://extensions and turn on Developer mode."

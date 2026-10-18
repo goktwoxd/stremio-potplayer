@@ -2,7 +2,9 @@ name: validate
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,9 +13,9 @@ jobs:
   validate:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
 
@@ -30,6 +32,11 @@ jobs:
         run: |
           node --check extension/labels.js
           node --check extension/content.js
+
+      - name: Run behaviour tests
+        run: |
+          node tests/labels.test.js
+          node tests/content.test.js
 
       - name: Check PowerShell syntax
         shell: pwsh
@@ -53,7 +60,7 @@ jobs:
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./tools/package.ps1
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: stremio-potplayer
           path: dist/*.zip

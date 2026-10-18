@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PotPlayer launcher for Stremio",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Adds a one-click handoff from Stremio Web's Copy stream link action to PotPlayer on Windows.",
   "minimum_chrome_version": "111",
   "content_scripts": [

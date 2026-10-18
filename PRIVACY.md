@@ -36,6 +36,14 @@ The installer writes one per-user registry key,
 `HKCU\Software\Classes\stremio-potplayer`, containing the path to PotPlayer.
 No other data is stored.
 
+## Clipboard history and sync
+
+Stremio places the stream URL on the Windows clipboard. Stream links often
+contain debrid or addon API tokens. If Windows Clipboard History or
+cross-device sync is enabled, Windows may retain or sync that URL independently
+of this extension. Clear the clipboard, or disable those Windows features, if
+that matters. The extension itself never reads or stores clipboard contents.
+
 ## Contact
 
 Open an issue in this repository.

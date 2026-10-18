@@ -1,0 +1,21 @@
+name: labels
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Clone Stremio translations
+        run: git clone --depth 1 https://github.com/Stremio/stremio-translations.git "$RUNNER_TEMP/stremio-translations"
+
+      - name: Check Stremio labels
+        run: python3 tools/update-labels.py --source "$RUNNER_TEMP/stremio-translations" --check

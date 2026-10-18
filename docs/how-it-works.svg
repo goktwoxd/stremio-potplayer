@@ -33,7 +33,7 @@
     <text x="112" y="210" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600">Copy stream link</text>
 
     <text x="80" y="254" fill="#8f87ad" font-family="Segoe UI, Arial, sans-serif" font-size="13">Stream details</text>
-    <text x="80" y="300" fill="#5f587a" font-family="Segoe UI, Arial, sans-serif" font-size="11">Right-click or use the ··· menu</text>
+    <text x="80" y="300" fill="#5f587a" font-family="Segoe UI, Arial, sans-serif" font-size="11">Right-click a stream row</text>
 
     <path d="M300 198 l0 30 l8 -8 l6 13 l7 -3 l-6 -13 l11 0 z" fill="#ffffff" stroke="#120f20" stroke-width="1.5" stroke-linejoin="round"/>
   </g>
