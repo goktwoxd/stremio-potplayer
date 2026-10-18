@@ -21,6 +21,9 @@ Copy-Item -Path (Join-Path $root "install") -Destination (Join-Path $stage "inst
 Copy-Item -Path (Join-Path $root "docs") -Destination (Join-Path $stage "docs") -Recurse
 Copy-Item -Path (Join-Path $root "README.md") -Destination $stage
 Copy-Item -Path (Join-Path $root "LICENSE") -Destination $stage
+Copy-Item -Path (Join-Path $root "PRIVACY.md") -Destination $stage
+Copy-Item -Path (Join-Path $root "CONTRIBUTING.md") -Destination $stage
+Copy-Item -Path (Join-Path $root "CHANGELOG.md") -Destination $stage
 
 if (Test-Path $zip) {
     Remove-Item -Path $zip -Force

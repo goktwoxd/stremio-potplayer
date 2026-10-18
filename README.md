@@ -101,7 +101,8 @@ The extension logs to the page console with the `[Stremio->PotPlayer]` prefix
 | `https://web.stremio.com/*` | The content script runs only on Stremio Web. |
 
 There are no network requests, analytics, or remote scripts. The protocol
-handler and the extension both run locally.
+handler and the extension both run locally. See [`PRIVACY.md`](PRIVACY.md) for
+the full policy.
 
 ## Uninstall
 
@@ -135,6 +136,12 @@ Not yet. PotPlayer reads only the URL from the clipboard. Passing extra
 Stremio exposes the link through the clipboard. The extension reads it only to
 confirm the copy succeeded; if the clipboard doesn't contain an `http(s)` URL,
 it shows a toast and does not launch PotPlayer.
+
+## Contributing
+
+Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). For a
+quick start: load the extension unpacked, run the installer in dry-run mode,
+and test with content you are allowed to access.
 
 ## Disclaimer
 

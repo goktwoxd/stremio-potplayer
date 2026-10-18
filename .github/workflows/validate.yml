@@ -1,0 +1,53 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate manifest
+        shell: pwsh
+        run: |
+          $manifest = Get-Content extension/manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.manifest_version -ne 3) { throw "manifest_version must be 3" }
+          if (-not $manifest.content_scripts) { throw "content_scripts is missing" }
+          if ($manifest.permissions -notcontains "clipboardRead") { throw "clipboardRead permission is missing" }
+
+      - name: Check JavaScript syntax
+        run: node --check extension/content.js
+
+      - name: Check PowerShell syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD "install/install.ps1"), [ref]$tokens, [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+
+      - name: Build release zip
+        shell: pwsh
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./tools/package.ps1 -Version 1.0.0
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stremio-potplayer
+          path: dist/*.zip
+          if-no-files-found: error
