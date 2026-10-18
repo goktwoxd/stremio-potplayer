@@ -1,52 +1,64 @@
 /*
- * Stremio -> PotPlayer
+ * PotPlayer launcher for Stremio
  *
- * Watches for clicks on Stremio's "Copy Stream Link" menu item. Once Stremio
- * has written the stream URL to the clipboard, hands off to the
- * "stremio-potplayer:" protocol, which launches PotPlayer with /clipboard.
+ * Runs in the page's MAIN world so it can observe Stremio's own
+ * navigator.clipboard.writeText(...) call. PotPlayer is launched only when the
+ * click armed the extension AND the write promise resolved with an http(s) URL.
+ * The clipboard itself is never read.
  */
 (() => {
   "use strict";
 
   const PROTOCOL_URL = "stremio-potplayer:go";
-  const COPY_LABEL = "copy stream link";
-  const SETTLE_MS = 300;
-  const POLL_INTERVAL_MS = 150;
-  const POLL_ATTEMPTS = 14;
-  const DEDUPE_MS = 4000;
+  const ARM_WINDOW_MS = 1500;
+  const FALLBACK_LABEL = "copy stream link";
 
-  let handling = false;
-  let lastUrl = "";
-  let lastLaunchAt = 0;
+  const sourceLabels = Array.isArray(
+    globalThis.__STREMIO_POTPLAYER_COPY_LABELS__
+  )
+    ? globalThis.__STREMIO_POTPLAYER_COPY_LABELS__
+    : [FALLBACK_LABEL];
+  const labels = new Set(sourceLabels.map(normalize).filter(Boolean));
+  if (labels.size === 0) labels.add(FALLBACK_LABEL);
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  let armedAt = 0;
+  let armTimer = 0;
 
   function normalize(value) {
-    return (value || "").replace(/\s+/g, " ").trim().toLowerCase();
+    return String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  function inPlayer() {
+    return location.hash.startsWith("#/player");
   }
 
   function isCopyItem(node) {
     if (!(node instanceof HTMLElement)) return false;
-    if (normalize(node.getAttribute("title")) === COPY_LABEL) return true;
-    return normalize(node.textContent) === COPY_LABEL;
+
+    const title = normalize(node.getAttribute("title"));
+    if (title && labels.has(title)) return true;
+
+    const ariaLabel = normalize(node.getAttribute("aria-label"));
+    if (ariaLabel && labels.has(ariaLabel)) return true;
+
+    return labels.has(normalize(node.textContent));
   }
 
-  function findCopyItem(event) {
-    const path =
-      typeof event.composedPath === "function" ? event.composedPath() : [];
-    for (const node of path) {
-      if (isCopyItem(node)) return node;
-    }
-    return null;
+  function arm() {
+    armedAt = performance.now();
+    clearTimeout(armTimer);
+    armTimer = setTimeout(() => {
+      armedAt = 0;
+    }, ARM_WINDOW_MS);
   }
 
-  async function readClipboard() {
-    try {
-      return (await navigator.clipboard.readText()).trim();
-    } catch (error) {
-      console.debug("[Stremio->PotPlayer] clipboard read failed:", error);
-      return "";
-    }
+  function isArmed() {
+    return armedAt > 0 && performance.now() - armedAt <= ARM_WINDOW_MS;
+  }
+
+  function clearArm() {
+    armedAt = 0;
+    clearTimeout(armTimer);
   }
 
   function isStreamUrl(text) {
@@ -54,11 +66,16 @@
   }
 
   function showToast(message, isError = false) {
-    const old = document.getElementById("stremio-potplayer-toast");
+    if (!document.body) return;
+
+    const old = document.getElementById("potplayer-launcher-toast");
     if (old) old.remove();
 
     const toast = document.createElement("div");
-    toast.id = "stremio-potplayer-toast";
+    toast.id = "potplayer-launcher-toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.setAttribute("aria-atomic", "true");
     toast.textContent = message;
     Object.assign(toast.style, {
       position: "fixed",
@@ -79,7 +96,7 @@
       pointerEvents: "none"
     });
 
-    document.documentElement.appendChild(toast);
+    document.body.appendChild(toast);
     requestAnimationFrame(() => {
       toast.style.opacity = "1";
     });
@@ -89,52 +106,82 @@
     }, 2400);
   }
 
-  function launchPotPlayer() {
-    // A custom-scheme navigation hands off to the OS and leaves the SPA in place.
-    window.location.href = PROTOCOL_URL;
+  function launch() {
+    clearArm();
+    showToast("Opening in PotPlayer...");
+    console.info("[PotPlayer launcher] launching");
+    location.href = PROTOCOL_URL;
   }
 
-  async function handleCopyClick() {
-    if (handling) return;
-    handling = true;
+  function hookClipboard() {
+    const clipboardPrototype =
+      globalThis.Clipboard && globalThis.Clipboard.prototype;
+    if (
+      !clipboardPrototype ||
+      typeof clipboardPrototype.writeText !== "function"
+    ) {
+      if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", hookClipboard, {
+          once: true
+        });
+      } else {
+        console.info("[PotPlayer launcher] Clipboard.writeText is unavailable");
+      }
+      return;
+    }
+    if (clipboardPrototype.writeText.__potplayerLauncherWrapped) return;
 
-    try {
-      await sleep(SETTLE_MS);
+    const original = clipboardPrototype.writeText;
+    const wrapped = function (text) {
+      const result = original.apply(this, arguments);
 
-      for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt += 1) {
-        const text = await readClipboard();
-
-        if (isStreamUrl(text)) {
-          const now = Date.now();
-          const isDuplicate =
-            text === lastUrl && now - lastLaunchAt < DEDUPE_MS;
-
-          if (!isDuplicate) {
-            lastUrl = text;
-            lastLaunchAt = now;
-            console.debug("[Stremio->PotPlayer] launching:", text);
-            showToast("Opening in PotPlayer...");
-            launchPotPlayer();
-          }
-          return;
-        }
-
-        await sleep(POLL_INTERVAL_MS);
+      if (inPlayer()) {
+        clearArm();
+        return result;
       }
 
-      showToast("Couldn't read the stream link. Try again.", true);
-    } finally {
-      handling = false;
+      if (isArmed() && isStreamUrl(String(text))) {
+        // One click can only produce one launch; the next click re-arms.
+        clearArm();
+
+        if (result && typeof result.then === "function") {
+          result.then(
+            () => launch(),
+            () => {
+              showToast("Couldn't copy the stream link. Try again.", true);
+              console.info("[PotPlayer launcher] clipboard write failed");
+            }
+          );
+        }
+      }
+
+      return result;
+    };
+
+    wrapped.__potplayerLauncherWrapped = true;
+    try {
+      clipboardPrototype.writeText = wrapped;
+    } catch (error) {
+      console.info("[PotPlayer launcher] could not hook Clipboard.writeText");
     }
   }
 
   document.addEventListener(
     "click",
     (event) => {
-      if (!findCopyItem(event)) return;
-      // Let Stremio's own handler run and write the clipboard first.
-      setTimeout(handleCopyClick, 0);
+      if (inPlayer()) return;
+
+      const path =
+        typeof event.composedPath === "function" ? event.composedPath() : [];
+      for (const node of path) {
+        if (isCopyItem(node)) {
+          arm();
+          return;
+        }
+      }
     },
     true
   );
+
+  hookClipboard();
 })();

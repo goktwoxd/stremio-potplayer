@@ -11,11 +11,11 @@ jobs:
   validate:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Validate manifest
         shell: pwsh
@@ -23,30 +23,37 @@ jobs:
           $manifest = Get-Content extension/manifest.json -Raw | ConvertFrom-Json
           if ($manifest.manifest_version -ne 3) { throw "manifest_version must be 3" }
           if (-not $manifest.content_scripts) { throw "content_scripts is missing" }
-          if ($manifest.permissions -notcontains "clipboardRead") { throw "clipboardRead permission is missing" }
+          if ($manifest.content_scripts[0].world -ne "MAIN") { throw "content script must run in the MAIN world" }
+          if ($manifest.permissions) { throw "the extension should not request API permissions" }
 
       - name: Check JavaScript syntax
-        run: node --check extension/content.js
+        run: |
+          node --check extension/labels.js
+          node --check extension/content.js
 
       - name: Check PowerShell syntax
         shell: pwsh
         run: |
-          $tokens = $null
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Join-Path $PWD "install/install.ps1"), [ref]$tokens, [ref]$errors
-          ) | Out-Null
-          if ($errors.Count -gt 0) {
-            $errors | ForEach-Object { Write-Error $_.Message }
-            exit 1
+          $failed = $false
+          Get-ChildItem -Path . -Recurse -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$($_.Extent.File): $($_.Message)" }
+              $failed = $true
+            }
           }
+          if ($failed) { exit 1 }
 
       - name: Build release zip
         shell: pwsh
-        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./tools/package.ps1 -Version 1.0.0
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./tools/package.ps1
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: stremio-potplayer
           path: dist/*.zip

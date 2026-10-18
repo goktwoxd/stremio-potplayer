@@ -7,7 +7,8 @@ body:
     attributes:
       value: |
         Thanks for reporting. Please do not include copyrighted posters,
-        torrent/debrid screenshots, or personal information.
+        torrent/debrid screenshots, personal information, stream URLs, or API
+        tokens.
   - type: input
     id: windows
     attributes:
@@ -27,6 +28,20 @@ body:
     attributes:
       label: PotPlayer version
       placeholder: "v260819"
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: Stremio UI language
+      placeholder: "English, Türkçe, Deutsch..."
+    validations:
+      required: true
+  - type: input
+    id: extension
+    attributes:
+      label: Extension version
+      placeholder: "1.0.0"
     validations:
       required: true
   - type: textarea
@@ -54,7 +69,7 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: Console output, `chrome://extensions` errors, or installer output.
+      description: Console output, `chrome://extensions` errors, or installer output. Redact stream URLs and API tokens.
       render: text
     validations:
       required: false

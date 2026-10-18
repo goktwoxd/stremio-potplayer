@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Stremio to PotPlayer",
-  "version": "1.0.0",
-  "description": "Click \"Copy Stream Link\" in Stremio and play the stream in PotPlayer.",
-  "permissions": ["clipboardRead"],
+  "name": "PotPlayer launcher for Stremio",
+  "version": "1.0.1",
+  "description": "Adds a one-click handoff from Stremio Web's Copy stream link action to PotPlayer on Windows.",
+  "minimum_chrome_version": "111",
   "content_scripts": [
     {
       "matches": ["https://web.stremio.com/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+      "js": ["labels.js", "content.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "icons": {

@@ -1,4 +1,4 @@
-"""Generate the extension icons (run with the bundled Python + Pillow)."""
+"""Generate the extension icons. Requires Python 3 and Pillow (`pip install pillow`)."""
 
 from pathlib import Path
 

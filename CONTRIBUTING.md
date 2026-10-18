@@ -6,9 +6,10 @@ extension itself.
 
 ## Project scope
 
-- The extension runs only on `https://web.stremio.com/*`.
-- It turns the **Copy Stream Link** action into a `stremio-potplayer:`
-  navigation.
+- The extension runs only on `https://web.stremio.com/*`, in the page's MAIN
+  world (Chrome 111+).
+- It wraps `Clipboard.prototype.writeText` and turns a successful
+  **Copy stream link** write into a `stremio-potplayer:` navigation.
 - The installer registers a per-user protocol handler that launches PotPlayer
   with `/clipboard /new`.
 - Keep changes focused. Avoid adding frameworks or a bundler unless there is a
@@ -24,14 +25,31 @@ extension itself.
 4. Restart Chrome with `chrome://restart`.
 5. Test with content you are allowed to access.
 
+## Localized labels
+
+`extension/labels.js` is generated from the `CTX_COPY_STREAM_LINK` key in
+[Stremio/stremio-translations](https://github.com/Stremio/stremio-translations).
+Do not edit it by hand. To regenerate:
+
+```powershell
+git clone https://github.com/Stremio/stremio-translations.git ..\stremio-translations
+python tools/update-labels.py --source ..\stremio-translations
+```
+
+Without `--source`, the script fetches the locale files through the GitHub API.
+
 ## Testing checklist
 
-- [ ] Click **Copy Stream Link** in Stremio Web.
+- [ ] Click **Copy stream link** in Stremio Web, with the UI in English and in
+      at least one other language.
 - [ ] Chrome shows the **Open PotPlayer?** prompt the first time.
 - [ ] PotPlayer opens a new window and plays the stream.
-- [ ] The extension shows its toast and logs `[Stremio->PotPlayer]` lines.
+- [ ] Cancelling Chrome's prompt and clicking again still works.
+- [ ] The in-player menu (`#/player`) does **not** launch PotPlayer.
+- [ ] The extension shows its toast and logs `[PotPlayer launcher]` lines.
 - [ ] No errors on the extension card at `chrome://extensions`.
-- [ ] `node --check extension/content.js` passes.
+- [ ] `node --check extension/labels.js` and
+      `node --check extension/content.js` pass.
 - [ ] `powershell -ExecutionPolicy Bypass -File install/install.ps1 -DryRun`
       finds PotPlayer.
 
@@ -47,6 +65,6 @@ extension itself.
 
 ## Reporting bugs
 
-Use the issue templates. Include Windows/Chrome/PotPlayer versions, steps,
-expected vs. actual behavior, and any console output. Redact personal
-information.
+Use the issue templates. Include Windows/Chrome/PotPlayer versions, the Stremio
+UI language, steps, expected vs. actual behavior, and any console output.
+**Redact stream URLs and API tokens** before pasting logs.

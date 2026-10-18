@@ -9,8 +9,8 @@ $ErrorActionPreference = "Stop"
 $protocolKey = "HKCU:\Software\Classes\stremio-potplayer"
 
 Write-Host ""
-Write-Host "Stremio -> PotPlayer protocol uninstaller" -ForegroundColor Cyan
-Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "PotPlayer launcher for Stremio - protocol uninstaller" -ForegroundColor Cyan
+Write-Host "=====================================================" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Test-Path $protocolKey)) {

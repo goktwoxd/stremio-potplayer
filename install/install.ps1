@@ -1,6 +1,7 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
+    [string]$PotPlayerPath,
     [switch]$DryRun
 )
 
@@ -10,7 +11,42 @@ $scheme = "stremio-potplayer"
 $protocolKey = "HKCU:\Software\Classes\$scheme"
 $extensionPath = Join-Path (Split-Path -Parent $PSScriptRoot) "extension"
 
+function Get-PotPlayerFromProtocol {
+    $commandKeys = @(
+        "HKCU:\Software\Classes\potplayer\shell\open\command",
+        "HKLM:\SOFTWARE\Classes\potplayer\shell\open\command"
+    )
+
+    foreach ($key in $commandKeys) {
+        try {
+            $command = (Get-ItemProperty -Path $key -ErrorAction Stop)."(default)"
+        } catch {
+            continue
+        }
+
+        if (-not $command) { continue }
+
+        $path = $null
+        if ($command -match '^\s*"([^"]+\.exe)"') {
+            $path = $matches[1]
+        } elseif ($command -match '^\s*(.+?\.exe)(?=\s|"|$)') {
+            $path = $matches[1]
+        }
+
+        if ($path -and (Test-Path -LiteralPath $path -PathType Leaf)) {
+            return (Resolve-Path -LiteralPath $path).Path
+        }
+    }
+
+    return $null
+}
+
 function Find-PotPlayer {
+    # PotPlayer registers its own "potplayer:" handler; its command is the most
+    # reliable record of where the player currently lives.
+    $fromProtocol = Get-PotPlayerFromProtocol
+    if ($fromProtocol) { return $fromProtocol }
+
     $candidates = New-Object System.Collections.Generic.List[string]
 
     $registryKeys = @(
@@ -48,15 +84,24 @@ function Find-PotPlayer {
 }
 
 Write-Host ""
-Write-Host "Stremio -> PotPlayer protocol installer" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "PotPlayer launcher for Stremio - protocol installer" -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$potPlayer = Find-PotPlayer
+if ($PotPlayerPath) {
+    if (-not (Test-Path -LiteralPath $PotPlayerPath -PathType Leaf)) {
+        Write-Host "PotPlayer was not found at: $PotPlayerPath" -ForegroundColor Red
+        exit 1
+    }
+    $potPlayer = (Resolve-Path -LiteralPath $PotPlayerPath).Path
+} else {
+    $potPlayer = Find-PotPlayer
+}
+
 if (-not $potPlayer) {
     Write-Host "PotPlayer was not found." -ForegroundColor Red
-    Write-Host "Install the 64-bit PotPlayer first, then run this again."
-    Write-Host "If PotPlayer is in a custom folder, set `$potPlayer manually in this script."
+    Write-Host "Install the 64-bit PotPlayer first, or pass the executable explicitly:"
+    Write-Host "  install.cmd -PotPlayerPath `"C:\Program Files\DAUM\PotPlayer\PotPlayerMini64.exe`""
     exit 1
 }
 
@@ -92,6 +137,6 @@ Write-Host "  1. Open chrome://extensions and turn on Developer mode."
 Write-Host "  2. Click 'Load unpacked' and select:"
 Write-Host "     $extensionPath"
 Write-Host "  3. Restart Chrome (open chrome://restart) so it picks up the new protocol."
-Write-Host "  4. In Stremio, click 'Copy Stream Link' and tick 'Always allow'."
+Write-Host "  4. In Stremio, click 'Copy stream link' and tick 'Always allow'."
 Write-Host ""
 Write-Host "To undo, run uninstall.cmd (or uninstall.ps1)."

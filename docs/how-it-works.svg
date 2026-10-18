@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
   <title id="title">How Stremio Web to PotPlayer works</title>
-  <desc id="desc">Click Copy Stream Link in Stremio Web, allow the Chrome prompt once, and the stream opens in a new PotPlayer window.</desc>
+  <desc id="desc">Click Copy stream link in Stremio Web, allow the Chrome prompt once, and the stream opens in a new PotPlayer window.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -30,14 +30,14 @@
     <rect x="72" y="184" width="256" height="42" rx="8" fill="#3a2a7a"/>
     <rect x="88" y="197" width="13" height="15" rx="2" fill="none" stroke="#ffffff" stroke-width="1.4"/>
     <rect x="91" y="200" width="7" height="9" rx="1" fill="#ffffff"/>
-    <text x="112" y="210" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600">Copy Stream Link</text>
+    <text x="112" y="210" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600">Copy stream link</text>
 
     <text x="80" y="254" fill="#8f87ad" font-family="Segoe UI, Arial, sans-serif" font-size="13">Stream details</text>
     <text x="80" y="300" fill="#5f587a" font-family="Segoe UI, Arial, sans-serif" font-size="11">Right-click or use the ··· menu</text>
 
     <path d="M300 198 l0 30 l8 -8 l6 13 l7 -3 l-6 -13 l11 0 z" fill="#ffffff" stroke="#120f20" stroke-width="1.5" stroke-linejoin="round"/>
   </g>
-  <text x="40" y="382" fill="#a79fc9" font-family="Segoe UI, Arial, sans-serif" font-size="13">1 · Click <tspan fill="#ffffff" font-weight="600">Copy Stream Link</tspan></text>
+  <text x="40" y="382" fill="#a79fc9" font-family="Segoe UI, Arial, sans-serif" font-size="13">1 · Click <tspan fill="#ffffff" font-weight="600">Copy stream link</tspan></text>
 
   <!-- Arrow 1 -->
   <g stroke="#6f5bd0" stroke-width="2" fill="none">
@@ -76,7 +76,8 @@
     <path d="M766 210 H828"/>
     <path d="M820 204 l8 6 l-8 6" fill="#6f5bd0" stroke="none"/>
   </g>
-  <text x="766" y="196" fill="#8f87ad" font-family="Segoe UI, Arial, sans-serif" font-size="11">stremio-potplayer:</text>
+  <text x="766" y="190" fill="#8f87ad" font-family="Segoe UI, Arial, sans-serif" font-size="10">stremio-</text>
+  <text x="766" y="204" fill="#8f87ad" font-family="Segoe UI, Arial, sans-serif" font-size="10">potplayer:</text>
 
   <!-- Card 3: PotPlayer -->
   <g filter="url(#shadow)">

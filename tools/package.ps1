@@ -1,12 +1,21 @@
 # Build a release zip containing the extension, installer, README, and license.
 [CmdletBinding()]
 param(
-    [string]$Version = "1.0.0"
+    [string]$Version
 )
 
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
+$manifestPath = Join-Path $root "extension\manifest.json"
+$manifest = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+if (-not $Version) {
+    $Version = $manifest.version
+}
+if (-not $Version) {
+    throw "No version found. Set 'version' in extension\manifest.json."
+}
+
 $dist = Join-Path $root "dist"
 $stage = Join-Path $dist "stage"
 $zip = Join-Path $dist "stremio-potplayer-$Version.zip"
@@ -19,6 +28,7 @@ New-Item -ItemType Directory -Path $stage -Force | Out-Null
 Copy-Item -Path (Join-Path $root "extension") -Destination (Join-Path $stage "extension") -Recurse
 Copy-Item -Path (Join-Path $root "install") -Destination (Join-Path $stage "install") -Recurse
 Copy-Item -Path (Join-Path $root "docs") -Destination (Join-Path $stage "docs") -Recurse
+Copy-Item -Path (Join-Path $root "tools") -Destination (Join-Path $stage "tools") -Recurse
 Copy-Item -Path (Join-Path $root "README.md") -Destination $stage
 Copy-Item -Path (Join-Path $root "LICENSE") -Destination $stage
 Copy-Item -Path (Join-Path $root "PRIVACY.md") -Destination $stage
