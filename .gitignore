@@ -1,0 +1,12 @@
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Build artifacts
+*.zip
+dist/

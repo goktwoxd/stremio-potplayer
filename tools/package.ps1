@@ -1,0 +1,31 @@
+# Build a release zip containing the extension, installer, README, and license.
+[CmdletBinding()]
+param(
+    [string]$Version = "1.0.0"
+)
+
+$ErrorActionPreference = "Stop"
+
+$root = Split-Path -Parent $PSScriptRoot
+$dist = Join-Path $root "dist"
+$stage = Join-Path $dist "stage"
+$zip = Join-Path $dist "stremio-potplayer-$Version.zip"
+
+if (Test-Path $stage) {
+    Remove-Item -Path $stage -Recurse -Force
+}
+New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+Copy-Item -Path (Join-Path $root "extension") -Destination (Join-Path $stage "extension") -Recurse
+Copy-Item -Path (Join-Path $root "install") -Destination (Join-Path $stage "install") -Recurse
+Copy-Item -Path (Join-Path $root "docs") -Destination (Join-Path $stage "docs") -Recurse
+Copy-Item -Path (Join-Path $root "README.md") -Destination $stage
+Copy-Item -Path (Join-Path $root "LICENSE") -Destination $stage
+
+if (Test-Path $zip) {
+    Remove-Item -Path $zip -Force
+}
+Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
+Remove-Item -Path $stage -Recurse -Force
+
+Write-Host "Wrote $zip" -ForegroundColor Green
